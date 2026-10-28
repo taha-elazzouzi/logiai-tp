@@ -85,3 +85,18 @@ def test_modele_absent_renvoie_503():
     with TestClient(app) as client:
         state.pop("predictor", None)  # on simule un modèle non chargé
         assert post(client).status_code == 503
+
+
+def test_heure_24_refusee():
+    with TestClient(app) as client:
+        assert post(client, heure_depart=24).status_code == 422
+
+
+def test_alerte_coherente_avec_le_seuil():
+    difficile = dict(distance_km=300, poids_kg=2500, heure_depart=17, pluie_mm=40,
+                     trafic_index=10, nb_arrets=10, type_vehicule="camion")
+    facile = dict(distance_km=5, poids_kg=3, heure_depart=11, pluie_mm=0,
+                  trafic_index=1, nb_arrets=0, type_vehicule="moto")
+    with TestClient(app) as client:
+        assert post(client, **difficile).json()["alerte"] is True
+        assert post(client, **facile).json()["alerte"] is False
